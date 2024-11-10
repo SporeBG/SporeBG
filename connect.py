@@ -201,6 +201,10 @@ class BGServer(Server):# with the SporeBG
 			send(self.login(cobj=cobj,jdata=jmsg))
 		elif mode=='wantGame':
 			send(self.wantGame(cobj=cobj,jdata=jmsg))
+		elif mode=='onGame':
+			send(self.onGame(cobj=cobj,jdata=jmsg))
+		elif mode=='onWaitGame':
+			send(self.onWaitGame(cobj=cobj,jdata=jmsg))
 		elif mode=='onlineUsers':
 			send(self.onlineUsers())
 		elif mode=='onlineGames':
@@ -228,18 +232,30 @@ class BGServer(Server):# with the SporeBG
 		if aimCobj:#直接匹配成功
 			aimCobj.send({'mode':'wantGame',#通知先等待的玩家
 				'setting':setting,
+				'player':1,
 				'wantGameResult':\
 				cobj.id if cobj.id else 'Unknown'})#返回对方用户名
 			new_game = GameOnS(aimCobj,cobj)#为二人创建在Server上的对局
 			self.games.append(new_game)
 			return {'mode':'wantGame',
 			'setting':setting,
+			'player':1,
 			'wantGameResult':\
 			aimCobj.id if aimCobj.id else 'Unknown'}#若未登录则返回默认名Unknown
 		cobj.new_wantGame(setting)#注册新的匹配等待 使当前客户端进入匹配等待状态
 		return {'mode':'wantGame',
 		'setting':setting,
 		'wantGameResult':''}
+	def onGame(self,cobj:ClientObj,jdata:dict)->dict:
+		aimCobj = cobj.game.p1 if cobj.game.p2==cobj else cobj.game.p2
+		aimCobj.send({'mode':'onWaitGame',#通知对方的玩家
+			'onWaitGameResult':\
+			jdata['step']})#返回行动方操作
+		return {'mode':'onGame',
+			'onGameResult':''}#回传
+	def onWaitGame(self,cobj:ClientObj,jdata:dict)->dict:
+		return {'mode':'onWaitGame',
+			'onGameResult':''}#回传
 	def onlineUsers(self):
 		l = []
 		for i in self.clients:
@@ -320,6 +336,16 @@ class BGClient(Client):
 			result = react['wantGameResult']
 		print('匹配成功 对手',result)
 		self.game = GameE(react['setting']['boardSize'])
+		self.game.player=react['player']
+	def onWaitGame(self,step)->None:#阻塞式等待服务器传递对方操作
+		sendjson={'mode':'onWaitGame'}
+		react = self.actJson(sendjson)#发送请求
+		react = self.waitReactJson()#等待得到操作
+		result = react['onWaitGameResult']
+		return result
+	def onGame(self,step)->None:#向服务器上传游戏操作
+		sendjson={'mode':'onGame','step':step}
+		react = self.actJson(sendjson)#上传操作
 	def onlineUsers(self)->list[dict]:#查询服务器上都有哪些用户已登录
 		react = self.actJson({'mode':'onlineUsers'})
 		return react['onlineUsersResult']

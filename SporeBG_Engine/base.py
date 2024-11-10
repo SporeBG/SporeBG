@@ -125,6 +125,8 @@ class GameE():#GameEngine 负责游戏规则和存档处理
 			self.step_step.append([mode,f_pos,t_pos])
 			if len(self.germs_left)==0:
 				self.roll()
+		
+		self.germs_pick()
 		return check
 	def go_step(self,step):
 		mode,f_pos,t_pos=step

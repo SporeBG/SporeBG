@@ -81,9 +81,11 @@ class GameEG_pygame(GameEG):
 			self.go(self.step_mode,self.step_from,p)
 			if len(self.germs_left)>0:
 				self.step_from=self.germs_left[0][0]
+				return [self.step_mode,self.step_from,p]
 		else:
 			self.step_from=self.germs_left[0][0]
 			self.step_mode=GROW
+		return None
 	def click(self,posi):
 		if not rectIf(posi,self.ScrRect()):
 			return
@@ -144,7 +146,7 @@ class GameEG_pygame_port(GameEG_pygame):# 外接端口
 			return
 		mx=posi[0]-self.SX
 		my=posi[1]-self.SY
-		self.click_i((mx,my))
+		return self.click_i((mx,my))
 
 
 def main():

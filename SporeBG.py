@@ -25,6 +25,7 @@ class MenuPage(PageBase):
 		sur.fill('#fae3d9')
 		sur.blit(pygame.font.SysFont('SimHei', 100).render('SporeBG',True,(255,255,255)),(220,40))
 		sur.blit(pygame.font.SysFont('SimHei', 60).render('new game',True,(255,255,255)),(280,240))
+		sur.blit(pygame.font.SysFont('SimHei', 60).render('conn game',True,(255,255,255)),(280,340))
 	def eventer(self,event):
 		if event.type == pygame.MOUSEBUTTONDOWN:
 			posi=event.pos
@@ -32,6 +33,8 @@ class MenuPage(PageBase):
 			if 240<my and my<300:
 				return GamePage()
 				print(1)
+			if 340<my and my<400:
+				return GameConnPage()
 
 
 class GamePage(PageBase):
@@ -45,6 +48,33 @@ class GamePage(PageBase):
 			posi=event.pos
 			mx,my=posi
 			self.g.click(posi)
+
+#提供网络服务
+from connect import *
+class GameConnPage(PageBase):
+	def __init__(self):
+		f = open('idpw.txt','r')
+		iden = f.readline().strip('\n')
+		pw = f.readline().strip('\n')
+		self.c=BGClient()
+		self.c.start()
+		self.c.login(iden,pw)
+		self.c.wantGame()
+		self.g=GamePageObj((7,7),(180,10,420,420),None)
+		if self.c.game.player==1:
+			self.g.player2Unable()
+		else:
+			self.g.player1Unable()
+	def render(self,sur):
+		self.g.scr=sur
+		self.g.draw()
+	def eventer(self,event):
+		if event.type == pygame.MOUSEBUTTONDOWN:
+			posi=event.pos
+			mx,my=posi
+			step=self.g.click(posi)
+			if step:
+				self.c.onGame(step)
 def main():
 	pygame.init()
 	scr=pygame.display.set_mode((800,600))
